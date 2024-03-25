@@ -3,7 +3,7 @@
 #include <SPI.h>
 #include <stdint.h>
 
-Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
+Fast_ST7789 tft = Fast_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
 void t_print_img(uint16_t x, uint16_t y, const uint16_t bitmap[], uint16_t w, uint16_t h);
 
@@ -15,35 +15,45 @@ void init_tft(){
   tft.fillScreen(ST77XX_BLACK);
   tft.setTextWrap(true);
 
-  time = micros();
-  t_print_img(0,0,T_BGC,240,240);
-  unsigned long dt = micros()-time;
-  Serial.println(dt);
+  unsigned long dt;
+
+
+  // time = micros();
+  // // t_print_img(0,0,T_BGC,240,240);
+  // tft.test(0,0,T_BGC,240,240);
+  // dt = micros()-time;
+  // Serial.println(dt);
+  for(int i =0; i<8; i++){
+    Serial.print("\n===== ");
+    Serial.print(i);
+    Serial.print("=====\n");
+    tft.pgm_read_word2(T_BGC+(i*2));
+  }
   // t_print("1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111");
 }
 
-static uint16_t pgm_read_word2(const uint16_t* addr) {
-  uint16_t res, res1;
-//   __asm__ (
-//     "ssa8l %3"  /* SAR = (AR[`addr`] & 3) * 8; */\
-//     "srl %0, %1" /* AR[`res`] = AR[`word`] >> SAR; */\
-//     "ssa8l %4"  /* SAR = (AR[`addr`] & 3) * 8; */\
-//     "srl %2, %5"   /* AR[`res`] = AR[`word`] >> SAR; */\
-//     : "=r"(res), "=r"(res1)\
-//     : "r"(*__pgm_cast_u32ptr(addr)), "r"(addr), "r"(*__pgm_cast_u32ptr(addr+1)), "r"(addr+1)
-// );
+// static uint16_t pgm_read_word2(const uint16_t* addr) {
+//   uint16_t res, res1;
+// //   __asm__ (
+// //     "ssa8l %3"  /* SAR = (AR[`addr`] & 3) * 8; */\
+// //     "srl %0, %1" /* AR[`res`] = AR[`word`] >> SAR; */\
+// //     "ssa8l %4"  /* SAR = (AR[`addr`] & 3) * 8; */\
+// //     "srl %2, %5"   /* AR[`res`] = AR[`word`] >> SAR; */\
+// //     : "=r"(res), "=r"(res1)\
+// //     : "r"(*__pgm_cast_u32ptr(addr)), "r"(addr), "r"(*__pgm_cast_u32ptr(addr+1)), "r"(addr+1)
+// // );
 
-  __asm__ ( \
-    "ssa8l %2 \n"  /* SAR = (AR[`addr`] & 3) * 8; */ \
-    "srl %0, %1"    /* AR[`res`] = AR[`word`] >> SAR; */ \
-    : "=r"(res) : "r"(*__pgm_cast_u32ptr(addr)), "r"(addr));
-  __asm__ ( \
-    "ssa8l %2 \n"  /* SAR = (AR[`addr`] & 3) * 8; */ \
-    "srl %0, %1"    /* AR[`res`] = AR[`word`] >> SAR; */ \
-    : "=r"(res1) : "r"(*__pgm_cast_u32ptr(addr+1)), "r"(addr+1));
+//   __asm__ ( \
+//     "ssa8l %2 \n"  /* SAR = (AR[`addr`] & 3) * 8; */ \
+//     "srl %0, %1"    /* AR[`res`] = AR[`word`] >> SAR; */ \
+//     : "=r"(res) : "r"(*__pgm_cast_u32ptr(addr)), "r"(addr));
+//   __asm__ ( \
+//     "ssa8l %2 \n"  /* SAR = (AR[`addr`] & 3) * 8; */ \
+//     "srl %0, %1"    /* AR[`res`] = AR[`word`] >> SAR; */ \
+//     : "=r"(res1) : "r"(*__pgm_cast_u32ptr(addr+1)), "r"(addr+1));
 
-  return (res >> 8) | (res << 8) | (((res >> 8) | (res << 8))<<16);  
-}
+//   return (res >> 8) | (res << 8) | (((res >> 8) | (res << 8))<<16);  
+// }
 
 // void t_print(String text){
 //   int16_t cursor_x = tft.getCursorX();
@@ -73,30 +83,30 @@ static uint16_t pgm_read_word2(const uint16_t* addr) {
 //   tft.print(text);
 // }
 
-void t_print_img(uint16_t x, uint16_t y, const uint16_t bitmap[], uint16_t w, uint16_t h) {
-  volatile uint32_t * fifoPtr;;
-  uint32_t dataSize;
+// void t_print_img(uint16_t x, uint16_t y, const uint16_t bitmap[], uint16_t w, uint16_t h) {
+//   volatile uint32_t * fifoPtr;;
+//   uint32_t dataSize;
 
-  tft.setAddrWindow(x, y, w, h);
-  tft.startWrite(); 
+//   tft.setAddrWindow(x, y, w, h);
+//   tft.startWrite(); 
 
-  for (uint32_t i = 0; i < w*h/32; i++) {  
-    fifoPtr = &SPI1W0;
-    dataSize = 16;
+//   for (uint32_t i = 0; i < w*h/32; i++) {  
+//     fifoPtr = &SPI1W0;
+//     dataSize = 16;
 
-    SPI1U1 = (SPI1U1 & ~(SPIMMOSI << SPILMOSI)) | ((511) << SPILMOSI);
-    while(SPI1CMD & SPIBUSY) {}
+//     SPI1U1 = (SPI1U1 & ~(SPIMMOSI << SPILMOSI)) | ((511) << SPILMOSI);
+//     while(SPI1CMD & SPIBUSY) {}
 
-    while(dataSize--) {
-      *(fifoPtr++) = pgm_read_word2(bitmap++);
-      bitmap++;
-    }
+//     while(dataSize--) {
+//       *(fifoPtr++) = pgm_read_word2(bitmap++);
+//       bitmap++;
+//     }
     
-    // __sync_synchronize();
-    SPI1CMD |= SPIBUSY;
-    // while(SPI1CMD & SPIBUSY) {}
+//     // __sync_synchronize();
+//     SPI1CMD |= SPIBUSY;
+//     // while(SPI1CMD & SPIBUSY) {}
     
-  }
+//   }
   
-  tft.endWrite();
-}
+//   tft.endWrite();
+// }
